@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Popup Parent Login</title>
+
+    <style>
+        body {
+            min-height: 100vh;
+            background-color: #f1f5f9;
+        }
+
+        .button-container {
+            margin-top: 16px;
+        }
+    </style>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script>
+        const SERVER_URL = 'http://localhost:8080'
+        const PARENT_URL = 'http://localhost:3000'
+        const CHILD_URL = 'http://localhost:4000'
+
+        let account = ''
+
+        function sendInfoToOpener(data) {
+            window.opener.postMessage(data, PARENT_URL);
+            window.opener.postMessage(data, CHILD_URL);
+
+            setTimeout(() => {
+                window.close();
+            }, 1000)
+        }
+
+        function handleConnect(username, key) {
+
+            axios.post(`${SERVER_URL}/login`, { username, key })
+                .then((res) => {
+                    sendInfoToOpener(res.data);
+                })
+                .catch(err => {
+                    alert('Tên đăng nhập hoặc mật khẩu không đúng')
+                    console.log('Lỗi đăng nhập', err);
+                });
+        }
+
+        function handleLogin() {
+            const web3 = new Web3('http://localhost:7545')
+
+            if (window.ethereum) {
+
+                window.ethereum.request({
+                    method: 'wallet_requestPermissions',
+                    params: [{
+                        eth_accounts: {},
+                    }],
+                })
+            }
+            else {
+                alert('Bạn chưa tải metamask')
+            }
+        }
+
+        function handleContinue() {
+            const inputValue = document.getElementById('input-key').value;
+            if (inputValue === '123456') {
+                handleConnect(account, inputValue)
+            }
+            else {
+                alert('Key không chính xác')
+            }
+        }
+
+        function showContainerKey() {
+            const containerElement = document.getElementById('container-key');
+            containerElement.style.display = 'block';
+        }
+
+        //Lắng nghe sự thay đổi account trên metamask
+        window.ethereum.on('accountsChanged', function (newAccount) {
+            //Nếu tồn tại account mới
+            if (newAccount[0]) {
+                // Tạo 1 thẻ input yêu cầu đăng nhập key tại đây 
+                showContainerKey()
+                account = newAccount[0]
+            }
+            else {
+                //Nếu không tồn tại account mới => đăng xuất
+                window.close()
+            }
+        })
+    </script>
+</head>
+
+<body>
+    <div style="margin-left: auto; margin-right: auto; max-width: 200px;text-align: center;" id="login">
+        <h1>Đăng nhập</h1>
+        <!-- Đoạn mã form đăng nhập -->
+        <button onclick="handleLogin()" style="cursor: pointer;margin-bottom: 16px;">Đăng nhập bằng tài khoản
+            metamask</button>
+
+        <div id="container-key" style="display: none;">
+            <input placeholder="enter your key" id='input-key'
+                style="width: 187px;margin-bottom: 10px; height: 24px;padding-left: 8px;"></input>
+            <button onclick="handleContinue()">Tiếp tục</button>
+        </div>
+    </div>
+</body>
+
+</html>

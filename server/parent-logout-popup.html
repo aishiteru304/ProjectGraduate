@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Popup Parent Logout</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script>
+        const SERVER_URL = 'http://localhost:8080'
+        const PARENT_URL = 'http://localhost:3000'
+
+        function sendInfoToOpener(data) {
+            window.opener.postMessage(data, PARENT_URL);
+
+            window.close();
+        }
+
+        function handleConnect(username) {
+
+            axios.post(`${SERVER_URL}/login`, { username })
+                .then((res) => {
+                    sendInfoToOpener(res.data);
+                })
+                .catch(err => {
+                    alert('Tên đăng nhập hoặc mật khẩu không đúng')
+                    console.log('Lỗi đăng nhập', err);
+                });
+        }
+
+        //Lắng nghe sự thay đổi account trên metamask
+        window.ethereum.on('accountsChanged', function (newAccount) {
+            //Nếu tồn tại account mới
+            if (newAccount[0]) {
+                handleConnect(newAccount[0])
+            }
+            else {
+                //Nếu không tồn tại account mới => đăng xuất
+
+                //Hàm yêu cầu parent website re-render
+                window.opener.postMessage({ type: 'LOGOUT' }, PARENT_URL);
+                window.close()
+
+            }
+        })
+    </script>
+</head>
+
+<body>
+    <h1 style="text-align: center;">Đăng xuất website cha bằng cách đăng xuất metamask</h1>
+    <!-- Đoạn mã form đăng nhập -->
+    <!-- <button onclick="handleLogout()">Đăng xuất</button> -->
+</body>
+
+</html>

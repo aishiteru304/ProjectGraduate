@@ -8,6 +8,8 @@ contract Faucet {
         string dateOfBirth;
         string phoneNumber;
         string email;
+        string signature;
+        string publickey;
     }
 
     mapping(address => AccountInfo) public accounts;
@@ -17,14 +19,18 @@ contract Faucet {
         string memory _sex,
         string memory _dateOfBirth,
         string memory _phoneNumber,
-        string memory _email
+        string memory _email,
+        string memory _signature,
+        string memory _publickey
     ) public {
         accounts[msg.sender] = AccountInfo(
             _name,
             _sex,
             _dateOfBirth,
             _phoneNumber,
-            _email
+            _email,
+            _signature,
+            _publickey
         );
     }
 
@@ -32,6 +38,8 @@ contract Faucet {
         public
         view
         returns (
+            string memory,
+            string memory,
             string memory,
             string memory,
             string memory,
@@ -44,7 +52,9 @@ contract Faucet {
             accounts[msg.sender].sex,
             accounts[msg.sender].dateOfBirth,
             accounts[msg.sender].phoneNumber,
-            accounts[msg.sender].email
+            accounts[msg.sender].email,
+            accounts[msg.sender].signature,
+            accounts[msg.sender].publickey
         );
     }
 }
