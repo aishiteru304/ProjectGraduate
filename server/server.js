@@ -55,19 +55,6 @@ function decryptAES(encryptedString, key) {
 }
 
 
-const digitalSignature = (plaintext) => {
-    // Tạo key
-    const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 })
-    const privateKey_pem = forge.pki.privateKeyToPem(keyPair.privateKey);
-    const publicKey_pem = forge.pki.publicKeyToPem(keyPair.publicKey);
-
-    // Kí
-    const privateKey = forge.pki.privateKeyFromPem(privateKey_pem);
-    const md = forge.md.sha256.create();
-    md.update(plaintext.toString(), 'utf8');
-    return { signature: privateKey.sign(md), publickey: publicKey_pem }
-}
-
 // API đăng nhập
 app.post('/login', (req, res) => {
 
@@ -79,23 +66,26 @@ app.post('/login', (req, res) => {
 
     contractFaucet.methods.getAccountInfo().call({ from: username })
         .then(result => {
-            const token = jwt.sign({ username, key, name: result[0], sex: result[1], birth: result[2], phone: result[3], email: result[4], signature: result[5], publickey: result[6] }, process.env.SECRET_KEY);
+            const token = jwt.sign({ username, key, name: result[0], sex: result[1], birth: result[2], phone: result[3], email: result[4], signature: result[5] }, process.env.SECRET_KEY);
 
             res.send({ token })
         })
         .catch()
 
-
 });
 
 app.post('/update', (req, res) => {
     const { username, name, key, sex, birth, phone, email } = req.body
-    const digital = digitalSignature(name + sex + birth + phone + email)
+    // const digital = digitalSignature(name + sex + birth + phone + email)
+    const privateKey = forge.pki.privateKeyFromPem(process.env.PRIVATE_KEY);
+    const md = forge.md.sha256.create();
+    md.update(name + sex + birth + phone + email, 'utf8');
+    const signature = privateKey.sign(md)
 
     const web3 = new Web3('http://127.0.0.1:7545')
 
     const contractFaucet = new web3.eth.Contract(Faucet.abi, Faucet.networks[5777].address)
-    contractFaucet.methods.setAccountInfo(encryptAES(name, key), encryptAES(sex, key), encryptAES(birth, key), encryptAES(phone, key), encryptAES(email, key), encryptAES(digital.signature, key), encryptAES(digital.publickey, key)).send({ from: username, gas: 1500000 })
+    contractFaucet.methods.setAccountInfo(encryptAES(name, key), encryptAES(sex, key), encryptAES(birth, key), encryptAES(phone, key), encryptAES(email, key), encryptAES(signature, key)).send({ from: username, gas: 1500000 })
         .then(() => res.send('Update success'))
         .catch()
 
@@ -105,18 +95,17 @@ app.post('/update', (req, res) => {
 function authenticateToken(req, res, next) {
     // Lấy token từ header Authorization
     const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
-
     if (!token) {
         return res.status(401).json({ error: 'Token không được cung cấp.' });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
-        const { username, key, name, sex, birth, phone, email, signature, publickey } = decoded
+        const { username, key, name, sex, birth, phone, email, signature } = decoded
 
         // Lưu thông tin người dùng được giải mã từ token vào req.user
         if (name)
-            req.user = { username, key, name: decryptAES(name, key), sex: decryptAES(sex, key), birth: decryptAES(birth, key), phone: decryptAES(phone, key), email: decryptAES(email, key), signature: decryptAES(signature, key), publickey: decryptAES(publickey, key) };
+            req.user = { username, key, name: decryptAES(name, key), sex: decryptAES(sex, key), birth: decryptAES(birth, key), phone: decryptAES(phone, key), email: decryptAES(email, key), signature: decryptAES(signature, key) };
         else req.user = decoded
         next();
     } catch (err) {
@@ -132,33 +121,32 @@ app.get('/user-info', authenticateToken, (req, res) => {
     res.json({ info: req.user });
 });
 
-// Đoạn mã xử lý đường dẫn "/login-popup"
-app.get('/login-popup', (req, res) => {
-    res.sendFile(__dirname + '/login-popup.html');
-});
 
-// Đoạn mã xử lý đường dẫn "/parent-login-popup"
-app.get('/parent-login-popup', (req, res) => {
-    res.sendFile(__dirname + '/parent-login-popup.html');
-});
-
-// Đoạn mã xử lý đường dẫn "/parent-out-popup"
-app.get('/parent-logout-popup', (req, res) => {
-    res.sendFile(__dirname + '/parent-logout-popup.html');
-});
 
 
 app.get('/', (req, res) => {
     res.send("Hello world!")
-    // const digital = digitalSignature('hello')
-    // const publicKey = forge.pki.publicKeyFromPem(digital.publickey);
-    // const md2 = forge.md.sha256.create();
-    // md2.update('hello', 'utf8');
-    // const verified = publicKey.verify(md2.digest().bytes(), digital.signature);
-    // console.log(verified)
+    const privateKey = forge.pki.privateKeyFromPem(process.env.PRIVATE_KEY);
+    const md = forge.md.sha256.create();
+    md.update('hello'.toString(), 'utf8');
+    const signature = privateKey.sign(md)
 
-    // console.log(decryptAES(encryptAES('hello', '123456'), '123456'))
+    const publicKey = forge.pki.publicKeyFromPem(process.env.PUBLIC_KEY);
+    const md2 = forge.md.sha256.create();
+    md2.update('hello', 'utf8');
+    const verified = publicKey.verify(md2.digest().bytes(), signature);
+    console.log(verified)
+
 })
+
+// Key exchange
+app.get('/getMainKey', (req, res) => {
+    res.send({ prime: process.env.BIG_PRIME, key: process.env.PUBLIC_KEY_MAIN })
+})
+app.get('/getSubKey', (req, res) => {
+    res.send({ prime: process.env.BIG_PRIME, key: process.env.PUBLIC_KEY_SUB })
+})
+
 // Khởi động server
 app.listen(8080, () => {
     console.log('Server đang chạy trên cổng 8080');

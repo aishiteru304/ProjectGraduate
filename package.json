@@ -10,6 +10,7 @@
     "@web3-react/core": "^8.2.0",
     "axios": "^1.4.0",
     "base-64": "^1.0.0",
+    "big-integer": "^1.6.51",
     "crypto-js": "^4.1.1",
     "ethereumjs-util": "^7.1.5",
     "ethers": "^6.4.0",

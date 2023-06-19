@@ -11,6 +11,10 @@ export const encryptAES = (plaintext, key) => {
     const encryptedData = CryptoJS.AES.encrypt(plaintext, key).toString();
     return encryptedData
 }
+export const decryptAES = (encryptedString, key) => {
+    const decryptedBytes = CryptoJS.AES.decrypt(encryptedString, key);
+    return decryptedBytes.toString(CryptoJS.enc.Utf8);
+}
 
 export const digitalSignature = (plaintext) => {
     // Tạo key

@@ -1,8 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { toast } from 'react-hot-toast';
-// import { loadContract } from '../utility'
-// import Web3 from 'web3'
-// import { encryptAES, digitalSignature } from '../utility'
+// import { encryptAES } from '../utility'
 import axios from 'axios';
 
 export default function UpdateComponent({ props }) {
@@ -39,6 +37,12 @@ export default function UpdateComponent({ props }) {
                     .then(() => {
                         sessionStorage.removeItem('register')
                         sessionStorage.setItem('userupdate', JSON.stringify({ username, key, name: info.name, sex: info.sex, birth: info.birth, phone: info.phone, email: info.email }))
+                        // const sharedKey = sessionStorage.getItem('sharedKey')
+                        // if (sharedKey) {
+                        //     const infoData = encryptAES(JSON.stringify({ username, key, name: info.name, sex: info.sex, birth: info.birth, phone: info.phone, email: info.email }), sharedKey)
+                        //     document.cookie = `data=${infoData}; path=/`
+                        //     // localStorage.setItem('data', infoData)
+                        // }
                         toast(`${props} thành công.`)
                         setTimeout(() => {
                             window.location.href = '/'
@@ -49,29 +53,6 @@ export default function UpdateComponent({ props }) {
                         console.log(err)
                     })
 
-                // const digital = digitalSignature(info.name + info.sex + info.birth + info.phone + info.email)
-
-
-                // const web3 = new Web3('http://localhost:7545')
-                // loadContract('Faucet')
-                //     .then(faucet => {
-                //         const contractFaucet = new web3.eth.Contract(faucet.abi, faucet.networks[5777].address)
-                //         contractFaucet.methods.setAccountInfo(encryptAES(info.name, key), encryptAES(info.sex, key), encryptAES(info.birth, key), encryptAES(info.phone, key), encryptAES(info.email, key), encryptAES(digital.signature, key), encryptAES(digital.publickey, key)).send({ from: username, gas: 1500000 })
-                //             .then(() => {
-                //                 sessionStorage.removeItem('register')
-                //                 sessionStorage.setItem('userupdate', JSON.stringify({ username, key, name: info.name, sex: info.sex, birth: info.birth, phone: info.phone, email: info.email }))
-                //                 toast(`${props} thành công.`)
-                //                 setTimeout(() => {
-                //                     window.location.href = '/'
-                //                 }, 1000)
-                //             })
-                //             .catch((err) => {
-                //                 toast(`${props} thất bại.`)
-                //                 console.log(err)
-                //             })
-
-                //     })
-                //     .catch(() => toast("Kết nối contract thất bại."))
             }
             else
                 toast("Định dạng email hoặc số điện thoại không hợp lệ")
